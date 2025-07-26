@@ -7,20 +7,17 @@ import SignUpUser from './components/SignUpUser';
 import Dashboard from './pages/Dashboard';
 import PrivateRoute from './components/PrivateRoute';
 import AddSchools from './pages/AddSchools';
-import AddSuperAdmin from './components/AddSuperAdmin';
 import Assessments from './insidepages/Assessments';
 import Attendance from './pages/Attendance';
 import Fees from './insidepages/Fees';
 import Results from './insidepages/results';
 import SetupSchool from './pages/SetupSchool';
 import AddAdmin from './components/AddAdmin';
-import AddClasses from './components/AddClasses';
 import AddStudent from './components/AddStudent';
-import AddClassInstance from './components/AddClassInstance';
-import AddAcademicYear from './components/AddAcademicYear';
 import AppSidebar from './components/Sidebar';
 import AdminDashboard from './pages/admin/AdminDashboard';
-
+import AddSpecificClass from './components/AddSpecificClass';
+import AddSuperAdmin from './components/AddSuperAdmin';
 const { Content } = Layout;
 
 // Add a Layout component for global sidebar/content structure
@@ -88,13 +85,9 @@ function App() {
             {isCbAdmin && <Route path="/add-super-admin" element={<PrivateRoute><AddSuperAdmin /></PrivateRoute>} />}
 
             {isSuperAdmin && <Route path="/school-setup" element={<PrivateRoute><SetupSchool /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-school-super-admin" element={<PrivateRoute><AddSuperAdmin /></PrivateRoute>} />}
             {isSuperAdmin && <Route path="/add-school-admin" element={<PrivateRoute><AddAdmin /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-classes" element={<PrivateRoute><AddClasses /></PrivateRoute>} />}
             {isSuperAdmin && <Route path="/add-student" element={<PrivateRoute><AddStudent /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-class-instance" element={<PrivateRoute><AddClassInstance /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-academic-year" element={<PrivateRoute><AddAcademicYear /></PrivateRoute>} />}
-            
+            {isSuperAdmin && <Route path="/add-specific-class" element={<PrivateRoute><AddSpecificClass /></PrivateRoute>} />}
             {isAdmin && <Route path="/admin-dashboard" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />}
 
             <Route path="/signup" element={<PrivateRoute><SignUpUser /></PrivateRoute>} />

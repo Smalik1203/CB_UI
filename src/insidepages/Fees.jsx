@@ -722,22 +722,6 @@ const Fees = () => {
               </Space>
             </Card>
           </Col>
-          <Col xs={24} md={12}>
-            <Card title="Payment Methods">
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text>Online Payments</Text>
-                  <Text strong>65%</Text>
-                </div>
-                <Progress percent={65} strokeColor="#1890ff" />
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Text>Cash Payments</Text>
-                  <Text strong>35%</Text>
-                </div>
-                <Progress percent={35} strokeColor="#52c41a" />
-              </Space>
-            </Card>
-          </Col>
         </Row>
       </div>
     );

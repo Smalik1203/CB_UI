@@ -42,9 +42,9 @@ const AppSidebar = () => {
   const getMenuItems = () => {
     const allItems = [
       {
-        key: '/dashboard',
+        key: '/home',
         icon: <HomeOutlined />,
-        label: 'Dashboard',
+        label: 'Home',
         roles: ['cb_admin', 'superadmin', 'admin', 'teacher', 'student', 'parent']
       },
       {
@@ -55,8 +55,8 @@ const AppSidebar = () => {
       },
       {
         key: '/add-super-admin',
-        icon: <UserAddOutlined />,
-        label: 'Add Super Admin',
+        icon: <BankOutlined />,
+        label: 'Super Admin',
         roles: ['cb_admin']
       },
       {
@@ -72,27 +72,16 @@ const AppSidebar = () => {
         roles: ['superadmin']
       },
       {
-        key: '/add-classes',
-        icon: <ReadOutlined />,
-        label: 'Manage Classes',
+        key: '/add-specific-class',
+        icon: <UnorderedListOutlined />,
+        label: 'Add Class',
         roles: ['superadmin']
       },
+
       {
         key: '/add-student',
         icon: <TeamOutlined />,
         label: 'Add Students',
-        roles: ['superadmin']
-      },
-      {
-        key: '/add-class-instance',
-        icon: <UnorderedListOutlined />,
-        label: 'Class Instances',
-        roles: ['superadmin']
-      },
-      {
-        key: '/add-academic-year',
-        icon: <CalendarOutlined />,
-        label: 'Academic Years',
         roles: ['superadmin']
       },
       {

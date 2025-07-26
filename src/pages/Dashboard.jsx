@@ -81,7 +81,6 @@ const Dashboard = () => {
         { title: 'Total Schools', value: 12, icon: <BankOutlined />, color: '#1890ff', trend: 8.2 },
         { title: 'Super Admins', value: 24, icon: <UserOutlined />, color: '#52c41a', trend: 12.5 },
         { title: 'Active Users', value: 1250, icon: <TeamOutlined />, color: '#722ed1', trend: -2.1 },
-        { title: 'System Health', value: 99.9, suffix: '%', icon: <RiseOutlined />, color: '#13c2c2', trend: 0.3 }
       ],
       'superadmin': [
         { title: 'Total Classes', value: 15, icon: <BookOutlined />, color: '#1890ff', trend: 15.2 },
@@ -126,12 +125,6 @@ const Dashboard = () => {
    */
   const getRecentActivities = (role) => {
     const activitiesMap = {
-      'cb_admin': [
-        { title: 'New school registered', description: 'Delhi Public School added to system', time: '2 hours ago', type: 'success' },
-        { title: 'Super admin created', description: 'New super admin for Mumbai School', time: '4 hours ago', type: 'info' },
-        { title: 'System backup completed', description: 'Daily backup completed successfully', time: '6 hours ago', type: 'success' },
-        { title: 'License renewal due', description: '5 schools need license renewal', time: '1 day ago', type: 'warning' }
-      ],
       'superadmin': [
         { title: 'Class created', description: 'Grade 11 - Section C added', time: '1 hour ago', type: 'success' },
         { title: 'Student enrolled', description: '25 new students added to Grade 10', time: '3 hours ago', type: 'info' },
@@ -170,12 +163,6 @@ const Dashboard = () => {
    */
   const getQuickActions = (role) => {
     const actionsMap = {
-      'cb_admin': [
-        { title: 'Add School', description: 'Register new educational institution', color: '#1890ff' },
-        { title: 'Manage Admins', description: 'Super admin management', color: '#52c41a' },
-        { title: 'System Reports', description: 'Platform analytics and insights', color: '#722ed1' },
-        { title: 'Settings', description: 'System configuration', color: '#fa8c16' }
-      ],
       'superadmin': [
         { title: 'Add Classes', description: 'Create new class sections', color: '#1890ff' },
         { title: 'Manage Students', description: 'Student enrollment and management', color: '#52c41a' },
@@ -205,7 +192,6 @@ const Dashboard = () => {
   };
 
   const stats = getStatsForRole(role);
-  const activities = getRecentActivities(role);
   const quickActions = getQuickActions(role);
 
   // UTILITY FUNCTIONS: Could be moved to utils for reusability
@@ -241,6 +227,9 @@ const Dashboard = () => {
             <Title level={2} style={{ margin: 0, color: '#1e293b', fontWeight: 600 }}>
               Welcome back, {userName}!
             </Title>
+            <Text type="secondary" style={{ fontSize: '16px' }}>
+              {getWelcomeMessage(role)}
+            </Text>
           </Col>
           <Col>
             <Space>
@@ -305,92 +294,10 @@ const Dashboard = () => {
       </Row>
 
       {/* Content Grid */}
-      <Row gutter={[16, 16]}>
-        {/* Recent Activity */}
-        <Col xs={24} lg={12}>
-          <Card 
-            title="Recent Activity" 
-            extra={<Button type="link" style={{ color: '#6366f1' }}>View All</Button>}
-            style={{ 
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              background: '#ffffff'
-            }}
-            headStyle={{ borderBottom: '1px solid #e2e8f0' }}
-          >
-            <Timeline>
-              {activities.map((activity, index) => (
-                <Timeline.Item
-                  key={index}
-                  color={activity.type === 'success' ? '#10b981' : activity.type === 'warning' ? '#f59e0b' : '#6366f1'}
-                  dot={
-                    activity.type === 'success' ? <CheckCircleOutlined /> :
-                    activity.type === 'warning' ? <ExclamationCircleOutlined /> :
-                    <ClockCircleOutlined />
-                  }
-                >
-                  <div>
-                    <Text strong style={{ color: '#1e293b' }}>{activity.title}</Text>
-                    <br />
-                    <Text style={{ color: '#64748b' }}>{activity.description}</Text>
-                    <br />
-                    <Text style={{ fontSize: '12px', color: '#94a3b8' }}>
-                      {activity.time}
-                    </Text>
-                  </div>
-                </Timeline.Item>
-              ))}
-            </Timeline>
-          </Card>
-        </Col>
-
-        {/* Quick Actions */}
-        <Col xs={24} lg={12}>
-          <Card 
-            title="Quick Actions"
-            style={{ 
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              background: '#ffffff'
-            }}
-            headStyle={{ borderBottom: '1px solid #e2e8f0' }}
-          >
-            <Row gutter={[8, 8]}>
-              {quickActions.map((action, index) => (
-                <Col xs={12} key={index}>
-                  <Card 
-                    size="small" 
-                    hoverable
-                    style={{ 
-                      textAlign: 'center',
-                      borderColor: action.color,
-                      cursor: 'pointer',
-                      borderRadius: '8px',
-                      transition: 'all 0.2s ease-in-out'
-                    }}
-                    bodyStyle={{ padding: '16px 8px' }}
-                  >
-                    <div style={{ color: action.color, fontSize: '24px', marginBottom: '8px' }}>
-                      {React.cloneElement(stats[index % stats.length].icon, { style: { fontSize: '24px' } })}
-                    </div>
-                    <Text strong style={{ display: 'block', marginBottom: '4px', color: '#1e293b' }}>
-                      {action.title}
-                    </Text>
-                    <Text style={{ fontSize: '12px', color: '#64748b' }}>
-                      {action.description}
-                    </Text>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-          </Card>
-        </Col>
-      </Row>
+    
 
       {/* Performance Overview (for admin and above) */}
-      {['cb_admin', 'superadmin', 'admin'].includes(role) && (
+      {['superadmin', 'admin'].includes(role) && (
         <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
           <Col xs={24}>
             <Card 
