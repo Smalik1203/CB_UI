@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Typography, Row, Col, Button, Space } from 'antd';
+import { Card, Typography, Row, Col, Button, Space, AutoComplete } from 'antd';
 import { 
   UserAddOutlined, 
   CalendarOutlined, 
@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../AuthProvider';
 import { Link } from 'react-router-dom';
+import { Pointer } from 'lucide-react';
 
 const { Title, Text } = Typography;
 
@@ -68,35 +69,21 @@ const SetupSchool = () => {
    */
   const setupSteps = [
     {
-      title: 'Add School Admin',
+      title: 'Manage School Admins',
       description: 'Create administrator accounts for your school',
       icon: <UserAddOutlined />,
       link: '/add-school-admin',
       color: '#1890ff'
     },
     {
-      title: 'Add Academic Year',
-      description: 'Set up academic years for your school',
-      icon: <CalendarOutlined />,
-      link: '/add-academic-year',
-      color: '#52c41a'
-    },
-    {
-      title: 'Add Classes',
-      description: 'Create class structures and sections',
-      icon: <BookOutlined />,
-      link: '/add-classes',
-      color: '#722ed1'
-    },
-    {
-      title: 'Add Class Instance',
-      description: 'Connect classes with academic years and teachers',
+      title: 'Manage Class',
+      description: 'Connect classes and teachers',
       icon: <UnorderedListOutlined />,
-      link: '/add-class-instance',
+      link: '/add-specific-class',
       color: '#fa8c16'
     },
     {
-      title: 'Add Students',
+      title: 'Manage Students',
       description: 'Enroll students into your classes',
       icon: <TeamOutlined />,
       link: '/add-student',
@@ -113,7 +100,7 @@ const SetupSchool = () => {
           border: '1px solid #e2e8f0',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
           background: '#ffffff',
-          marginBottom: '24px'
+          marginBottom: '24px',
         }}>
           {/* 
             SCHOOL HEADER SECTION:
@@ -210,7 +197,7 @@ const SetupSchool = () => {
                         borderColor: step.color,
                         width: '100%',
                         borderRadius: '8px',
-                        fontWeight: 500
+                        fontWeight: 500,
                       }}
                     >
                       Get Started
@@ -222,95 +209,7 @@ const SetupSchool = () => {
           ))}
         </Row>
 
-        {/* Quick Actions */}
-        <Card 
-          title={
-            <Space>
-              <SettingOutlined />
-              <span>Quick Actions</span>
-            </Space>
-          }
-          style={{
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            background: '#ffffff',
-            marginTop: '24px'
-          }}
-          headStyle={{ borderBottom: '1px solid #e2e8f0' }}
-        >
-          {/* 
-            QUICK ACTIONS SECTION:
-            - Common administrative tasks
-            - Professional button layout
-            - Consistent styling and spacing
-            
-            BACKEND INTEGRATION NEEDED:
-            - Make actions dynamic based on user role and permissions
-            - Add action counters (e.g., "View Dashboard (5 pending)")
-            - Include recent activity indicators
-            - Add contextual actions based on setup progress
-            - Link to actual functional pages
-          */}
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} md={6}>
-              <Button 
-                type="default" 
-                block 
-                size="large"
-                style={{
-                  borderRadius: '8px',
-                  fontWeight: 500,
-                  border: '1px solid #e2e8f0'
-                }}
-              >
-                View Dashboard
-              </Button>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Button 
-                type="default" 
-                block 
-                size="large"
-                style={{
-                  borderRadius: '8px',
-                  fontWeight: 500,
-                  border: '1px solid #e2e8f0'
-                }}
-              >
-                School Settings
-              </Button>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Button 
-                type="default" 
-                block 
-                size="large"
-                style={{
-                  borderRadius: '8px',
-                  fontWeight: 500,
-                  border: '1px solid #e2e8f0'
-                }}
-              >
-                User Management
-              </Button>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Button 
-                type="default" 
-                block 
-                size="large"
-                style={{
-                  borderRadius: '8px',
-                  fontWeight: 500,
-                  border: '1px solid #e2e8f0'
-                }}
-              >
-                Reports
-              </Button>
-            </Col>
-          </Row>
-        </Card>
+
       </div>
     </div>
   );

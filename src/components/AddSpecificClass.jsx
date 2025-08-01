@@ -11,13 +11,14 @@ import {
   Col,
   message,
   Table,
-  Tag
+  Modal
 } from 'antd';
 import {
   CalendarOutlined,
   BookOutlined,
   UserOutlined,
-  PlusOutlined
+  PlusOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../AuthProvider';
 import { supabase } from '../config/supabaseClient';
@@ -27,7 +28,7 @@ const { Option } = Select;
 
 const AddSpecificClass = () => {
   const { user } = useAuth();
-  const { school_id, school_code, school_name, super_admin_code } = user.user_metadata || {};
+  const { school_code, school_name, super_admin_code } = user.user_metadata || {};
 
   const [form] = Form.useForm();
   const [academicYears, setAcademicYears] = useState([]);
@@ -36,6 +37,10 @@ const AddSpecificClass = () => {
   const [addingYear, setAddingYear] = useState(false);
   const [classInstances, setClassInstances] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
+  const [studentsModalVisible, setStudentsModalVisible] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+
 
   useEffect(() => {
     fetchAcademicYears();
@@ -101,7 +106,6 @@ const AddSpecificClass = () => {
         const { data: yearData, error: yearError } = await supabase
           .from('academic_years')
           .insert({
-            school_id,
             school_code,
             school_name,
             year_start: start,
@@ -174,14 +178,32 @@ const AddSpecificClass = () => {
       if (insertError) {
         message.error(insertError.message);
       } else {
-        message.success('Class instance created successfully');
+        message.success('Class created successfully');
         form.resetFields();
         setAddingYear(false);
-        fetchClassInstances(); // Refresh after insert
+        fetchClassInstances();
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewStudents = async (classInstanceId) => {
+    setStudentsModalVisible(true);
+    setStudentsLoading(true);
+
+    const { data, error } = await supabase
+      .from('student')
+      .select('full_name, student_code, email, phone, parent_phone')
+      .eq('class_instance_id', classInstanceId);
+
+    if (error) {
+      message.error('Failed to fetch students');
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(data || []);
+    }
+    setStudentsLoading(false);
   };
 
   const columns = [
@@ -215,6 +237,15 @@ const AddSpecificClass = () => {
       key: 'created_at',
       render: (date) => new Date(date).toLocaleDateString(),
     },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Button icon={<EyeOutlined />} onClick={() => handleViewStudents(record.id)} type="link">
+          View Students
+        </Button>
+      )
+    }
   ];
 
   return (
@@ -225,16 +256,11 @@ const AddSpecificClass = () => {
             <Space>
               <BookOutlined />
               <Title level={3} style={{ margin: 0, color: '#1e293b', fontWeight: 600 }}>
-                Add Specific Class Instance
+                Add Specific Class
               </Title>
             </Space>
           }
-          style={{
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            background: '#ffffff',
-          }}
+          style={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', background: '#ffffff' }}
           headStyle={{ borderBottom: '1px solid #e2e8f0' }}
         >
           <Form form={form} layout="vertical" onFinish={handleSubmit} size="large">
@@ -342,7 +368,7 @@ const AddSpecificClass = () => {
                   fontWeight: 500,
                 }}
               >
-                {loading ? 'Creating...' : 'Create Class Instance'}
+                {loading ? 'Creating...' : 'Create Class'}
               </Button>
               <Button
                 size="large"
@@ -357,18 +383,39 @@ const AddSpecificClass = () => {
             </Form.Item>
           </Form>
 
-          {/* Display Class Instances */}
           <div style={{ marginTop: '40px' }}>
-            <Title level={4}>Existing Class Instances</Title>
+            <Title level={4}>Existing Classes</Title>
             <Table
               dataSource={classInstances}
               columns={columns}
               loading={tableLoading}
               rowKey="id"
-              pagination={{ pageSize: 25 }}
+              pagination={{ pageSize: 50 }}
             />
           </div>
         </Card>
+
+        <Modal
+          title="Students in Class"
+          open={studentsModalVisible}
+          onCancel={() => setStudentsModalVisible(false)}
+          footer={null}
+          width={800}
+        >
+          <Table
+            dataSource={selectedStudents}
+            loading={studentsLoading}
+            rowKey="student_code"
+            pagination={{ pageSize: 10 }}
+            columns={[
+              { title: 'Student Code', dataIndex: 'student_code' },
+              { title: 'Full Name', dataIndex: 'full_name' },
+              { title: 'Email', dataIndex: 'email' },
+              { title: 'Phone', dataIndex: 'phone' },
+              { title: 'Parent Phone', dataIndex: 'parent_phone' },
+            ]}
+          />
+        </Modal>
       </div>
     </div>
   );

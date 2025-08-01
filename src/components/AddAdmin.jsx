@@ -27,6 +27,7 @@ const { Title } = Typography;
 
 const AddAdmin = () => {
   const { user } = useAuth();
+  console.log('user ', user)
   const { school_code, super_admin_code } = user.user_metadata || {};
 
   const [form] = Form.useForm();
@@ -39,9 +40,8 @@ const AddAdmin = () => {
     setAdminLoading(true);
     const { data, error } = await supabase
       .from('admin')
-      .select('full_name, email, phone, role, admin_code, created_at')
-      .eq('school_code', school_code)
-      .order('created_at', { ascending: false });
+      .select('full_name, email, phone, role, admin_code, super_admin_code')
+      .eq('school_code', school_code);
 
     if (error) {
       message.error('Failed to load admins');
@@ -59,7 +59,8 @@ const AddAdmin = () => {
     setLoading(true);
     try {
       const sessionResult = await supabase.auth.getSession();
-      const token = sessionResult.data.session?.access_token;
+      console.log('session ', sessionResult)
+      const token = sessionResult.data?.session?.access_token;
 
       if (!token) {
         message.error('Not authenticated. Please log in.');
@@ -132,10 +133,9 @@ const AddAdmin = () => {
       render: (role) => <Tag color="blue">{role}</Tag>,
     },
     {
-      title: 'Created At',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (date) => new Date(date).toLocaleString(),
+      title: 'Created By',
+      dataIndex: 'super_admin_code',
+      key: 'super_admin_code',
     },
   ];
 

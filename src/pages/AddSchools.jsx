@@ -96,10 +96,10 @@ export const AddSchools = () => {
                 <Form.Item
                   name="school_code"
                   label="School Code"
-                  initialValue="SCH"
+                  initialValue=""
                   rules={[{ required: true, message: 'Please enter school code' }]}
                 >
-                  <Input prefix={<NumberOutlined />} placeholder="Enter school code" />
+                  <Input  placeholder="Enter school code" />
                 </Form.Item>
               </Col>
 

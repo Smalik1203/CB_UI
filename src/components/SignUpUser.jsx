@@ -1,91 +1,83 @@
 import React, { useState } from 'react';
-import { supabase } from '../config/supabaseClient';
-import {useAuth} from "../AuthProvider"
-import {Navigate} from "react-router-dom";
-
+import { useAuth } from '../AuthProvider';
 
 const SignUpUser = () => {
-  const {user} = useAuth();
-  if(user) return <Navigate to="/dashboard"/>
+  const { session } = useAuth(); // 👈 assuming AuthProvider gives you session (access_token)
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [full_name, setFullName] = useState('');
-  const [phone_number, setPhonenumber] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [cbAdminCode, setCbAdminCode] = useState('CB');
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState('cb_admin');
-  const [cb_admin_code, setCbAdminCode] = useState('CB');
+
   const handleSignUp = async (e) => {
     e.preventDefault();
     setMessage(null);
     setError(null);
     setLoading(true);
+
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: full_name,
-            phone: phone_number, 
-            role: role,
-            cb_admin_code: cb_admin_code,
+      const response = await fetch(
+        'https://mvvzqouqxrtyzuzqbeud.supabase.co/functions/v1/create-cb-admin',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token && {
+              Authorization: `Bearer ${session.access_token}`,
+            }),
           },
-        },
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      } else {
-        setMessage('Signup successful! Please check your email to confirm your account.');
-        setEmail('');
-        setPassword('');
-        setFullName('');
-        setPhonenumber('');
+          body: JSON.stringify({
+            email,
+            password,
+            full_name: fullName,
+            phone,
+            cb_admin_code: cbAdminCode,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Signup failed.');
       }
+
+      setMessage('CB Admin created successfully!');
+      setEmail('');
+      setPassword('');
+      setFullName('');
+      setPhone('');
+      setCbAdminCode('CB');
     } catch (err) {
-      setError('An unexpected error occurred.');
+      setError(err.message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }
-
-    const {data: userData, error: userError} = await supabase.auth.getUser();
-    console.log(userData);
-
-    // insert this user into cb admin table
-    const {error: insertError} = await supabase.from('cb_admin').insert({
-      id: userData.user.id,
-      email: userData.user.email,
-      full_name: userData.user.user_metadata.full_name,
-      phone: userData.user.user_metadata.phone,
-      role: userData.user.user_metadata.role,
-      cb_admin_code: userData.user.user_metadata.cb_admin_code,
-    }
-  );
-
   };
 
   return (
-    <div>
-      <h2>Sign Up</h2>
+    <div style={{ maxWidth: 400, margin: '2rem auto' }}>
+      <h2>Create CB Admin</h2>
       <form onSubmit={handleSignUp}>
         <div>
           <label>Full Name:</label>
           <input
             type="text"
-            value={full_name}
+            value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
           />
         </div>
         <div>
-          <label>Phone Number:</label>
+          <label>Phone:</label>
           <input
             type="tel"
-            value={phone_number}
-            onChange={(e) => setPhonenumber(e.target.value)}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
           />
         </div>
@@ -108,29 +100,22 @@ const SignUpUser = () => {
           />
         </div>
         <div>
-          <label>Role:</label>  
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="cb_admin">CB Admin</option>
-            <option value="super_admin">Super Admin</option>
-          </select>
-        </div>
-        <div>
-          <label>CB AdminCode:</label>
+          <label>CB Admin Code:</label>
           <input
             type="text"
-            value={cb_admin_code}
+            value={cbAdminCode}
             onChange={(e) => setCbAdminCode(e.target.value)}
             required
           />
         </div>
-          <button type="submit" disabled={loading}>
-          {loading ? 'Signing Up...' : 'Sign Up'}
+        <button type="submit" disabled={loading}>
+          {loading ? 'Creating...' : 'Create CB Admin'}
         </button>
       </form>
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {message && <p style={{ color: 'green', marginTop: 10 }}>{message}</p>}
+      {error && <p style={{ color: 'red', marginTop: 10 }}>{error}</p>}
     </div>
   );
 };
 
-export default SignUpUser; 
+export default SignUpUser;

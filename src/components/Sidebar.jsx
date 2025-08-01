@@ -60,31 +60,6 @@ const AppSidebar = () => {
         roles: ['cb_admin']
       },
       {
-        key: '/school-setup',
-        icon: <SettingOutlined />,
-        label: 'School Setup',
-        roles: ['superadmin']
-      },
-      {
-        key: '/add-school-admin',
-        icon: <UserAddOutlined />,
-        label: 'Add Admin',
-        roles: ['superadmin']
-      },
-      {
-        key: '/add-specific-class',
-        icon: <UnorderedListOutlined />,
-        label: 'Add Class',
-        roles: ['superadmin']
-      },
-
-      {
-        key: '/add-student',
-        icon: <TeamOutlined />,
-        label: 'Add Students',
-        roles: ['superadmin']
-      },
-      {
         key: '/attendance',
         icon: <CalendarOutlined />,
         label: 'Attendance',
@@ -97,17 +72,23 @@ const AppSidebar = () => {
         roles: ['superadmin', 'admin', 'teacher', 'student']
       },
       {
+        key: '/fees',
+        icon: <DollarOutlined />,
+        label: 'Fees',
+        roles: ['superadmin', 'admin', 'student', 'parent']
+      },
+      {
         key: '/results',
         icon: <TrophyOutlined />,
         label: 'Results',
         roles: ['superadmin', 'admin', 'teacher', 'student', 'parent']
       },
       {
-        key: '/fees',
-        icon: <DollarOutlined />,
-        label: 'Fees',
-        roles: ['superadmin', 'admin', 'student', 'parent']
-      }
+        key: '/school-setup',
+        icon: <SettingOutlined />,
+        label: 'School Setup',
+        roles: ['superadmin']
+      },
     ];
 
     return allItems
