@@ -20,16 +20,20 @@ import {
   ApartmentOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
+import { useAuth } from '../AuthProvider';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const AddSuperAdmin = () => {
+  
   const [form] = Form.useForm();
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(false);
+  const {user} = useAuth();
+  console.log(user);
 
-  useEffect(() => {
+  useEffect(() => { 
     const fetchSchools = async () => {
       const { data, error } = await supabase
         .from('schools')
