@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useSupabaseQuery, useSupabaseMutation, useSupabaseSubscription } from '../hooks/useSupabaseQuery';
+import { useAuth } from '../AuthProvider';
 import { 
   Layout, 
   Card, 
@@ -39,113 +41,77 @@ const { Option } = Select;
 const { TabPane } = Tabs;
 const { TextArea } = Input;
 
-// ==========================================
-// HARDCODED SAMPLE DATA
-// ==========================================
-// TODO: Replace with Supabase queries when integrating backend
-
-const SAMPLE_ASSESSMENTS = [
-  {
-    id: 1,
-    title: "Mathematics Unit Test 1",
-    subject: "Mathematics",
-    classId: 1,
-    className: "Grade 10 - Section A",
-    type: "Unit Test",
-    totalMarks: 100,
-    duration: 90,
-    date: "2025-01-25",
-    status: "scheduled",
-    createdBy: "Mr. Anil Gupta",
-    description: "Covers chapters 1-3: Real Numbers, Polynomials, and Linear Equations"
-  },
-  {
-    id: 2,
-    title: "Science Practical Exam",
-    subject: "Science",
-    classId: 1,
-    className: "Grade 10 - Section A",
-    type: "Practical",
-    totalMarks: 50,
-    duration: 120,
-    date: "2025-01-22",
-    status: "completed",
-    createdBy: "Mrs. Priya Sharma",
-    description: "Laboratory experiments on acids, bases, and salts"
-  },
-  {
-    id: 3,
-    title: "English Essay Writing",
-    subject: "English",
-    classId: 2,
-    className: "Grade 10 - Section B",
-    type: "Assignment",
-    totalMarks: 25,
-    duration: 60,
-    date: "2025-01-20",
-    status: "graded",
-    createdBy: "Ms. Kavya Reddy",
-    description: "Creative writing on environmental conservation"
-  },
-  {
-    id: 4,
-    title: "History Chapter Test",
-    subject: "History",
-    classId: 3,
-    className: "Grade 9 - Section A",
-    type: "Chapter Test",
-    totalMarks: 75,
-    duration: 75,
-    date: "2025-01-28",
-    status: "draft",
-    createdBy: "Dr. Rajesh Kumar",
-    description: "The French Revolution and its impact"
-  }
-];
-
-const SAMPLE_RESULTS = [
-  { id: 1, assessmentId: 2, studentId: 1, studentName: "Amit Sharma", marksObtained: 42, grade: "A", remarks: "Excellent practical skills" },
-  { id: 2, assessmentId: 2, studentId: 2, studentName: "Priya Singh", marksObtained: 38, grade: "B+", remarks: "Good understanding" },
-  { id: 3, assessmentId: 2, studentId: 3, studentName: "Rahul Verma", marksObtained: 45, grade: "A+", remarks: "Outstanding performance" },
-  { id: 4, assessmentId: 3, studentId: 6, studentName: "Kavya Reddy", marksObtained: 22, grade: "A", remarks: "Creative and well-structured" },
-  { id: 5, assessmentId: 3, studentId: 7, studentName: "Vikram Joshi", marksObtained: 20, grade: "B+", remarks: "Good content, needs improvement in grammar" }
-];
-
-const SAMPLE_CLASSES = [
-  { id: 1, name: "Grade 10 - Section A" },
-  { id: 2, name: "Grade 10 - Section B" },
-  { id: 3, name: "Grade 9 - Section A" },
-  { id: 4, name: "Grade 11 - Section A" }
-];
-
-const SAMPLE_SUBJECTS = [
-  "Mathematics", "Science", "English", "History", "Geography", "Computer Science"
-];
-
 const Assessments = () => {
-  // ==========================================
-  // COMPONENT STATE
-  // ==========================================
-  
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('list');
-  const [assessments, setAssessments] = useState(SAMPLE_ASSESSMENTS);
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState('create'); // 'create', 'edit', 'view'
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
 
-  // TODO: Replace with actual user data from Supabase auth
+  // Get user role and school context
   const currentUser = {
-    role: 'admin', // Change to test different roles: 'superadmin', 'admin', 'teacher', 'student'
-    name: 'Mrs. Sunita Sharma',
-    assignedClassIds: [1, 3]
+    role: user?.user_metadata?.role || 'student',
+    name: user?.user_metadata?.full_name || 'User',
+    schoolCode: user?.user_metadata?.school_code
   };
 
-  // ==========================================
-  // ROLE-BASED PERMISSIONS
-  // ==========================================
-  
+  // Fetch assessments from Supabase
+  const { data: assessments = [], loading: assessmentsLoading, refetch: refetchAssessments } = useSupabaseQuery('assessments', {
+    select: `
+      *,
+      class_instances!inner(
+        id,
+        grade,
+        section,
+        classes!inner(grade, section)
+      ),
+      creator:created_by(full_name)
+    `,
+    filters: [
+      { column: 'school_code', operator: 'eq', value: currentUser.schoolCode }
+    ],
+    orderBy: { column: 'exam_date', ascending: false }
+  });
+
+  // Fetch assessment results
+  const { data: results = [] } = useSupabaseQuery('assessment_results', {
+    select: `
+      *,
+      assessment:assessments(title, total_marks),
+      student:student(full_name)
+    `,
+    filters: [
+      { column: 'school_code', operator: 'eq', value: currentUser.schoolCode }
+    ]
+  });
+
+  // Fetch available classes
+  const { data: classes = [] } = useSupabaseQuery('class_instances', {
+    select: `
+      id,
+      grade,
+      section,
+      classes!inner(grade, section)
+    `,
+    filters: [
+      { column: 'school_code', operator: 'eq', value: currentUser.schoolCode }
+    ]
+  });
+
+  // Mutation hooks
+  const { insert: createAssessment, update: updateAssessment, remove: deleteAssessment, loading: mutationLoading } = useSupabaseMutation('assessments');
+
+  // Real-time subscription for assessments
+  useSupabaseSubscription('assessments', (payload) => {
+    console.log('Assessment change:', payload);
+    refetchAssessments();
+  }, [{ column: 'school_code', value: currentUser.schoolCode }]);
+
+  const SUBJECTS = [
+    "Mathematics", "Science", "English", "History", "Geography", "Computer Science"
+  ];
+
   const permissions = {
     canCreateAssessment: ['superadmin', 'admin', 'teacher'].includes(currentUser.role),
     canEditAssessment: ['superadmin', 'admin', 'teacher'].includes(currentUser.role),
@@ -156,47 +122,15 @@ const Assessments = () => {
                   ['list', 'create', 'results', 'analytics']
   };
 
-  // ==========================================
-  // DATA FILTERING FUNCTIONS
-  // ==========================================
-  
-  // Get assessments based on user role
-  // TODO: Replace with Supabase query based on user permissions
   const getFilteredAssessments = () => {
-    switch (currentUser.role) {
-      case 'superadmin':
-        return assessments;
-      case 'admin':
-      case 'teacher':
-        return assessments.filter(assessment => 
-          currentUser.assignedClassIds.includes(assessment.classId)
-        );
-      case 'student':
-        // TODO: Filter by student's class
-        return assessments.filter(assessment => assessment.classId === 1); // Assuming student is in class 1
-      default:
-        return [];
-    }
+    // RLS policies handle filtering at database level
+    return assessments;
   };
 
-  // Get available classes based on user role
-  // TODO: Replace with Supabase query
   const getAvailableClasses = () => {
-    switch (currentUser.role) {
-      case 'superadmin':
-        return SAMPLE_CLASSES;
-      case 'admin':
-      case 'teacher':
-        return SAMPLE_CLASSES.filter(cls => currentUser.assignedClassIds.includes(cls.id));
-      default:
-        return [];
-    }
+    return classes;
   };
 
-  // ==========================================
-  // EVENT HANDLERS
-  // ==========================================
-  
   const handleCreateAssessment = () => {
     setModalType('create');
     setSelectedAssessment(null);
@@ -227,48 +161,49 @@ const Assessments = () => {
       okText: 'Delete',
       okType: 'danger',
       cancelText: 'Cancel',
-      onOk: () => {
-        // TODO: Replace with Supabase delete operation
-        setAssessments(prev => prev.filter(a => a.id !== assessmentId));
+      onOk: async () => {
+        try {
+          await deleteAssessment(assessmentId);
+          refetchAssessments();
+        } catch (error) {
+          console.error('Error deleting assessment:', error);
+        }
       }
     });
   };
 
   const handleModalSubmit = async (values) => {
-    setLoading(true);
-    
     try {
-      // TODO: Replace with Supabase insert/update operations
       if (modalType === 'create') {
-        const newAssessment = {
-          id: Date.now(),
+        await createAssessment({
           ...values,
-          status: 'draft',
-          createdBy: currentUser.name,
-          className: SAMPLE_CLASSES.find(c => c.id === values.classId)?.name
-        };
-        setAssessments(prev => [...prev, newAssessment]);
+          class_instance_id: values.classId,
+          exam_date: values.date.format('YYYY-MM-DD'),
+          exam_type: values.type,
+          total_marks: parseInt(values.totalMarks),
+          duration: parseInt(values.duration),
+          school_code: currentUser.schoolCode,
+          created_by: user.id
+        });
       } else if (modalType === 'edit') {
-        setAssessments(prev => prev.map(a => 
-          a.id === selectedAssessment.id 
-            ? { ...a, ...values, className: SAMPLE_CLASSES.find(c => c.id === values.classId)?.name }
-            : a
-        ));
+        await updateAssessment(selectedAssessment.id, {
+          ...values,
+          class_instance_id: values.classId,
+          exam_date: values.date.format('YYYY-MM-DD'),
+          exam_type: values.type,
+          total_marks: parseInt(values.totalMarks),
+          duration: parseInt(values.duration)
+        });
       }
       
       setIsModalVisible(false);
       form.resetFields();
+      refetchAssessments();
     } catch (error) {
       console.error('Error saving assessment:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // ==========================================
-  // TABLE COLUMNS
-  // ==========================================
-  
   const assessmentColumns = [
     {
       title: 'Assessment',
@@ -278,21 +213,24 @@ const Assessments = () => {
           <Text strong>{record.title}</Text>
           <br />
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.subject} • {record.type}
+            {record.subject} • {record.exam_type}
           </Text>
         </div>
       ),
     },
     {
       title: 'Class',
-      dataIndex: 'className',
-      key: 'className',
-      render: (className) => <Tag color="blue">{className}</Tag>
+      key: 'class',
+      render: (_, record) => (
+        <Tag color="blue">
+          Grade {record.class_instances?.classes?.grade} - {record.class_instances?.classes?.section}
+        </Tag>
+      )
     },
     {
       title: 'Date',
-      dataIndex: 'date',
-      key: 'date',
+      dataIndex: 'exam_date',
+      key: 'exam_date',
       render: (date) => new Date(date).toLocaleDateString('en-IN')
     },
     {
@@ -300,7 +238,7 @@ const Assessments = () => {
       key: 'marks',
       render: (_, record) => (
         <div>
-          <Text strong>{record.totalMarks}</Text>
+          <Text strong>{record.total_marks}</Text>
           <br />
           <Text type="secondary" style={{ fontSize: '12px' }}>
             {record.duration} min
@@ -356,27 +294,23 @@ const Assessments = () => {
   const resultColumns = [
     {
       title: 'Student',
-      dataIndex: 'studentName',
-      key: 'studentName',
+      key: 'student',
+      render: (_, record) => record.student?.full_name || 'Unknown'
     },
     {
       title: 'Assessment',
       key: 'assessment',
-      render: (_, record) => {
-        const assessment = assessments.find(a => a.id === record.assessmentId);
-        return assessment ? assessment.title : 'Unknown';
-      }
+      render: (_, record) => record.assessment?.title || 'Unknown'
     },
     {
       title: 'Marks',
       key: 'marks',
       render: (_, record) => {
-        const assessment = assessments.find(a => a.id === record.assessmentId);
-        const percentage = assessment ? Math.round((record.marksObtained / assessment.totalMarks) * 100) : 0;
+        const percentage = Math.round(record.percentage || 0);
         return (
           <div>
-            <Text strong>{record.marksObtained}</Text>
-            <Text type="secondary">/{assessment?.totalMarks || 0}</Text>
+            <Text strong>{record.marks_obtained}</Text>
+            <Text type="secondary">/{record.max_marks}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: '12px' }}>
               {percentage}%
@@ -411,10 +345,6 @@ const Assessments = () => {
     }
   ];
 
-  // ==========================================
-  // RENDER FUNCTIONS
-  // ==========================================
-  
   const renderAssessmentsList = () => {
     const filteredAssessments = getFilteredAssessments();
     
@@ -490,6 +420,7 @@ const Assessments = () => {
             columns={assessmentColumns}
             dataSource={filteredAssessments}
             rowKey="id"
+            loading={assessmentsLoading}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -539,7 +470,7 @@ const Assessments = () => {
                 rules={[{ required: true, message: 'Please select subject' }]}
               >
                 <Select placeholder="Select subject">
-                  {SAMPLE_SUBJECTS.map(subject => (
+                  {SUBJECTS.map(subject => (
                     <Option key={subject} value={subject}>{subject}</Option>
                   ))}
                 </Select>
@@ -553,7 +484,9 @@ const Assessments = () => {
               >
                 <Select placeholder="Select class">
                   {getAvailableClasses().map(cls => (
-                    <Option key={cls.id} value={cls.id}>{cls.name}</Option>
+                    <Option key={cls.id} value={cls.id}>
+                      Grade {cls.classes?.grade} - {cls.classes?.section}
+                    </Option>
                   ))}
                 </Select>
               </Form.Item>
@@ -615,8 +548,18 @@ const Assessments = () => {
           
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit" loading={loading}>
-                Create Assessment
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={mutationLoading}
+                icon={<PlusOutlined />}
+                size="large"
+                style={{
+                  borderRadius: '6px',
+                  fontWeight: 500
+                }}
+              >
+                {mutationLoading ? 'Adding...' : 'Create Assessment'}
               </Button>
               <Button onClick={() => form.resetFields()}>
                 Reset
@@ -629,8 +572,7 @@ const Assessments = () => {
   };
 
   const renderResults = () => {
-    // TODO: Filter results based on user role and permissions
-    const filteredResults = SAMPLE_RESULTS;
+    const filteredResults = results;
     
     return (
       <div>
@@ -720,10 +662,6 @@ const Assessments = () => {
     );
   };
 
-  // ==========================================
-  // MAIN RENDER
-  // ==========================================
-  
   return (
     <Content className="page-container">
       {/* Header */}
@@ -893,7 +831,7 @@ const Assessments = () => {
                   rules={[{ required: true, message: 'Please select subject' }]}
                 >
                   <Select placeholder="Select subject">
-                    {SAMPLE_SUBJECTS.map(subject => (
+                    {SUBJECTS.map(subject => (
                       <Option key={subject} value={subject}>{subject}</Option>
                     ))}
                   </Select>
@@ -907,7 +845,9 @@ const Assessments = () => {
                 >
                   <Select placeholder="Select class">
                     {getAvailableClasses().map(cls => (
-                      <Option key={cls.id} value={cls.id}>{cls.name}</Option>
+                      <Option key={cls.id} value={cls.id}>
+                        Grade {cls.classes?.grade} - {cls.classes?.section}
+                      </Option>
                     ))}
                   </Select>
                 </Form.Item>
@@ -972,7 +912,7 @@ const Assessments = () => {
                 <Button onClick={() => setIsModalVisible(false)}>
                   Cancel
                 </Button>
-                <Button type="primary" htmlType="submit" loading={loading}>
+                <Button type="primary" htmlType="submit" loading={mutationLoading}>
                   {modalType === 'create' ? 'Create' : 'Update'} Assessment
                 </Button>
               </Space>

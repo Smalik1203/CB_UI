@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../AuthProvider';
+import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
 import { 
   Layout, 
   Card, 
@@ -33,49 +34,67 @@ import {
 const { Content } = Layout;
 const { Title, Text } = Typography;
 
-/**
- * DASHBOARD COMPONENT - Main Landing Page
- * 
- * CHANGES MADE:
- * - Converted from basic HTML to professional Ant Design components
- * - Added role-based statistics and content
- * - Implemented responsive grid layout
- * - Added interactive cards with hover effects
- * - Integrated timeline for recent activities
- * - Added performance overview with progress indicators
- * 
- * BACKEND INTEGRATION NEEDED:
- * - Replace hardcoded statistics with real-time data from Supabase
- * - Implement role-based data filtering
- * - Add real-time activity feed
- * - Integrate performance metrics calculation
- * - Add caching for frequently accessed data
- */
 const Dashboard = () => {
   const { user } = useAuth();
   
-  // BACKEND INTEGRATION: Replace with actual user data from Supabase auth
-  // Query: SELECT role, full_name, school_name FROM users WHERE id = user.id
   const role = user?.user_metadata?.role || 'admin';
   const userName = user?.user_metadata?.full_name || 'User';
   const schoolName = user?.user_metadata?.school_name || 'Demo School';
+  const schoolCode = user?.user_metadata?.school_code;
 
-  /**
-   * STATISTICS DATA - Role-based dashboard metrics
-   * 
-   * BACKEND INTEGRATION NEEDED:
-   * - CB Admin: Query schools, super_admins, users, system_health tables
-   * - Super Admin: Query classes, students, teachers, attendance tables
-   * - Admin: Query assigned classes, students, attendance, assignments
-   * - Student: Query subjects, attendance, grades, assignments for current user
-   * - Parent: Query children data, attendance, performance, notifications
-   * 
-   * Example Queries:
-   * - Total Schools: SELECT COUNT(*) FROM schools WHERE status = 'active'
-   * - Students: SELECT COUNT(*) FROM students WHERE school_id = user.school_id
-   * - Attendance Rate: SELECT AVG(attendance_percentage) FROM attendance_summary WHERE date >= current_month
-   */
+  // Fetch real-time statistics based on user role
+  const { data: classStats = [] } = useSupabaseQuery('class_instances', {
+    select: 'id',
+    filters: [
+      { column: 'school_code', operator: 'eq', value: schoolCode }
+    ],
+    enabled: ['superadmin', 'admin'].includes(role)
+  });
+
+  const { data: studentStats = [] } = useSupabaseQuery('student', {
+    select: 'id',
+    filters: [
+      { column: 'school_code', operator: 'eq', value: schoolCode }
+    ],
+    enabled: ['superadmin', 'admin'].includes(role)
+  });
+
+  const { data: assessmentStats = [] } = useSupabaseQuery('assessments', {
+    select: 'id, status',
+    filters: [
+      { column: 'school_code', operator: 'eq', value: schoolCode }
+    ],
+    enabled: ['superadmin', 'admin', 'teacher'].includes(role)
+  });
+
+  const { data: attendanceStats = [] } = useSupabaseQuery('attendance', {
+    select: 'status',
+    filters: [
+      { column: 'school_code', operator: 'eq', value: schoolCode },
+      { column: 'date', operator: 'gte', value: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0] }
+    ],
+    enabled: ['superadmin', 'admin', 'teacher'].includes(role)
+  });
+
+  const { data: recentActivities = [] } = useSupabaseQuery('activity_logs', {
+    select: `
+      action,
+      description,
+      created_at,
+      user_profiles!inner(full_name)
+    `,
+    filters: [
+      { column: 'school_code', operator: 'eq', value: schoolCode }
+    ],
+    orderBy: { column: 'created_at', ascending: false },
+    limit: 5
+  });
+
   const getStatsForRole = (role) => {
+    const attendanceRate = attendanceStats.length > 0 
+      ? Math.round((attendanceStats.filter(a => a.status === 'present').length / attendanceStats.length) * 100)
+      : 0;
+
     const statsMap = {
       'cb_admin': [
         { title: 'Total Schools', value: 12, icon: <BankOutlined />, color: '#1890ff', trend: 8.2 },
@@ -83,22 +102,22 @@ const Dashboard = () => {
         { title: 'Active Users', value: 1250, icon: <TeamOutlined />, color: '#722ed1', trend: -2.1 },
       ],
       'superadmin': [
-        { title: 'Total Classes', value: 15, icon: <BookOutlined />, color: '#1890ff', trend: 15.2 },
-        { title: 'Students', value: 450, icon: <TeamOutlined />, color: '#52c41a', trend: 8.7 },
+        { title: 'Total Classes', value: classStats.length, icon: <BookOutlined />, color: '#1890ff', trend: 15.2 },
+        { title: 'Students', value: studentStats.length, icon: <TeamOutlined />, color: '#52c41a', trend: 8.7 },
         { title: 'Teachers', value: 28, icon: <UserOutlined />, color: '#722ed1', trend: 5.3 },
-        { title: 'Attendance Rate', value: 94, suffix: '%', icon: <CalendarOutlined />, color: '#fa8c16', trend: 2.1 }
+        { title: 'Attendance Rate', value: attendanceRate, suffix: '%', icon: <CalendarOutlined />, color: '#fa8c16', trend: 2.1 }
       ],
       'admin': [
-        { title: 'My Classes', value: 6, icon: <BookOutlined />, color: '#1890ff', trend: 0 },
-        { title: 'Students', value: 180, icon: <TeamOutlined />, color: '#52c41a', trend: 5.2 },
-        { title: 'Attendance Rate', value: 92, suffix: '%', icon: <CalendarOutlined />, color: '#722ed1', trend: 1.8 },
-        { title: 'Assignments', value: 24, icon: <TrophyOutlined />, color: '#fa8c16', trend: -3.2 }
+        { title: 'My Classes', value: classStats.length, icon: <BookOutlined />, color: '#1890ff', trend: 0 },
+        { title: 'Students', value: studentStats.length, icon: <TeamOutlined />, color: '#52c41a', trend: 5.2 },
+        { title: 'Attendance Rate', value: attendanceRate, suffix: '%', icon: <CalendarOutlined />, color: '#722ed1', trend: 1.8 },
+        { title: 'Assessments', value: assessmentStats.length, icon: <TrophyOutlined />, color: '#fa8c16', trend: -3.2 }
       ],
       'student': [
         { title: 'Subjects', value: 8, icon: <BookOutlined />, color: '#1890ff', trend: 0 },
         { title: 'Attendance', value: 92, suffix: '%', icon: <CalendarOutlined />, color: '#52c41a', trend: 2.5 },
         { title: 'Average Grade', value: 85, suffix: '%', icon: <TrophyOutlined />, color: '#722ed1', trend: 5.1 },
-        { title: 'Assignments', value: 12, icon: <BookOutlined />, color: '#fa8c16', trend: -1.2 }
+        { title: 'Assessments', value: assessmentStats.length, icon: <BookOutlined />, color: '#fa8c16', trend: -1.2 }
       ],
       'parent': [
         { title: 'Children', value: 2, icon: <TeamOutlined />, color: '#1890ff', trend: 0 },
@@ -110,57 +129,17 @@ const Dashboard = () => {
     return statsMap[role] || statsMap['admin'];
   };
 
-  /**
-   * RECENT ACTIVITIES - Role-based activity feed
-   * 
-   * BACKEND INTEGRATION NEEDED:
-   * - Query activity_logs table with role-based filtering
-   * - Real-time updates using Supabase subscriptions
-   * - Pagination for large activity lists
-   * 
-   * Example Query:
-   * SELECT * FROM activity_logs 
-   * WHERE user_id = user.id OR (role_visibility @> ARRAY[user.role])
-   * ORDER BY created_at DESC LIMIT 10
-   */
-  const getRecentActivities = (role) => {
-    const activitiesMap = {
-      'superadmin': [
-        { title: 'Class created', description: 'Grade 11 - Section C added', time: '1 hour ago', type: 'success' },
-        { title: 'Student enrolled', description: '25 new students added to Grade 10', time: '3 hours ago', type: 'info' },
-        { title: 'Teacher assigned', description: 'Math teacher assigned to Grade 9', time: '5 hours ago', type: 'success' },
-        { title: 'Academic year setup', description: '2024-25 academic year configured', time: '1 day ago', type: 'info' }
-      ],
-      'admin': [
-        { title: 'Attendance marked', description: 'Grade 10-A attendance completed', time: '2 hours ago', type: 'success' },
-        { title: 'Assignment graded', description: 'Math homework reviewed for 25 students', time: '4 hours ago', type: 'info' },
-        { title: 'Parent meeting', description: 'Scheduled meeting with 5 parents', time: '6 hours ago', type: 'warning' },
-        { title: 'Report generated', description: 'Monthly progress report created', time: '1 day ago', type: 'success' }
-      ],
-      'student': [
-        { title: 'Assignment submitted', description: 'Math homework submitted on time', time: '1 hour ago', type: 'success' },
-        { title: 'Grade received', description: 'Science test: 85/100', time: '3 hours ago', type: 'info' },
-        { title: 'Attendance marked', description: 'Present in all classes today', time: '5 hours ago', type: 'success' },
-        { title: 'New assignment', description: 'English essay due next week', time: '1 day ago', type: 'warning' }
-      ],
-      'parent': [
-        { title: 'Child attendance', description: 'Amit present in all classes', time: '2 hours ago', type: 'success' },
-        { title: 'Grade update', description: 'Priya scored 90% in Math test', time: '4 hours ago', type: 'info' },
-        { title: 'Parent meeting', description: 'Meeting scheduled with class teacher', time: '6 hours ago', type: 'warning' },
-        { title: 'Fee reminder', description: 'Monthly fee due in 3 days', time: '1 day ago', type: 'warning' }
-      ]
-    };
-    return activitiesMap[role] || activitiesMap['admin'];
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
   };
 
-  /**
-   * QUICK ACTIONS - Role-based action buttons
-   * 
-   * BACKEND INTEGRATION NEEDED:
-   * - Dynamic action generation based on user permissions
-   * - Feature flag integration for enabling/disabling actions
-   * - Usage analytics for popular actions
-   */
   const getQuickActions = (role) => {
     const actionsMap = {
       'superadmin': [
@@ -194,7 +173,6 @@ const Dashboard = () => {
   const stats = getStatsForRole(role);
   const quickActions = getQuickActions(role);
 
-  // UTILITY FUNCTIONS: Could be moved to utils for reusability
   const getRoleDisplay = (role) => {
     const roleMap = {
       'cb_admin': 'CB Administrator',
@@ -328,7 +306,7 @@ const Dashboard = () => {
                   <div style={{ textAlign: 'center' }}>
                     <Progress
                       type="circle"
-                      percent={92}
+                      percent={attendanceStats.length > 0 ? Math.round((attendanceStats.filter(a => a.status === 'present').length / attendanceStats.length) * 100) : 0}
                       format={percent => `${percent}%`}
                       strokeColor="#6366f1"
                     />
@@ -341,16 +319,66 @@ const Dashboard = () => {
                   <div style={{ textAlign: 'center' }}>
                     <Progress
                       type="circle"
-                      percent={78}
+                      percent={assessmentStats.length > 0 ? Math.round((assessmentStats.filter(a => a.status === 'completed').length / assessmentStats.length) * 100) : 0}
                       format={percent => `${percent}%`}
                       strokeColor="#f59e0b"
                     />
                     <div style={{ marginTop: '8px' }}>
-                      <Text strong style={{ color: '#1e293b' }}>Assignment Completion</Text>
+                      <Text strong style={{ color: '#1e293b' }}>Assessment Completion</Text>
                     </div>
                   </div>
                 </Col>
               </Row>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Recent Activities */}
+      {recentActivities.length > 0 && (
+        <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+          <Col xs={24}>
+            <Card 
+              title="Recent Activities"
+              style={{ 
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+                background: '#ffffff'
+              }}
+              headStyle={{ borderBottom: '1px solid #e2e8f0' }}
+            >
+              <div className="space-y-3">
+                {recentActivities.map((activity, index) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px', 
+                    padding: '12px', 
+                    background: '#f8fafc', 
+                    borderRadius: '12px'
+                  }}>
+                    <CalendarOutlined style={{ width: '20px', height: '20px', color: '#6366f1' }} />
+                    <div>
+                      <p style={{ 
+                        color: '#1e293b', 
+                        fontSize: '14px', 
+                        fontWeight: 500,
+                        margin: 0
+                      }}>
+                        {activity.action}
+                      </p>
+                      <p style={{ 
+                        color: '#64748b', 
+                        fontSize: '12px',
+                        margin: 0
+                      }}>
+                        {activity.description} • {formatTimeAgo(activity.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Card>
           </Col>
         </Row>
