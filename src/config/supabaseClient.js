@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 // Fallback configuration - replace these with your actual Supabase values
 const FALLBACK_SUPABASE_URL = "https://mvvzqouqxrtyzuzqbeud.supabase.co";
-const FALLBACK_SUPABASE_ANON_KEY = "yeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12dnpxb3VxeHJ0eXp1enFiZXVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4NDUxNjEsImV4cCI6MjA2ODQyMTE2MX0.pdo_JBuGQP1aRlMLLMoST7xSD89PH2uB6bhzKiJTfu0";
+const FALLBACK_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12dnpxb3VxeHJ0eXp1enFiZXVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4NDUxNjEsImV4cCI6MjA2ODQyMTE2MX0.pdo_JBuGQP1aRlMLLMoST7xSD89PH2uB6bhzKiJTfu0";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
@@ -16,7 +16,7 @@ if (usingFallback) {
   console.warn("Or set up environment variables by clicking 'Connect to Supabase' in the top right");
 }
 
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes("your-project-id") || supabaseAnonKey.includes("your-anon-key")) {
+if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase configuration is incomplete. Please update the fallback values in src/config/supabaseClient.js or set up environment variables.");
 }
 
