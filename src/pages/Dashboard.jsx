@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '../AuthProvider';
-import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
 import { 
   Layout, 
   Card, 
@@ -42,59 +41,7 @@ const Dashboard = () => {
   const schoolName = user?.user_metadata?.school_name || 'Demo School';
   const schoolCode = user?.user_metadata?.school_code;
 
-  // Fetch real-time statistics based on user role
-  const { data: classStats = [] } = useSupabaseQuery('class_instances', {
-    select: 'id',
-    filters: [
-      { column: 'school_code', operator: 'eq', value: schoolCode }
-    ],
-    enabled: ['superadmin', 'admin'].includes(role)
-  });
-
-  const { data: studentStats = [] } = useSupabaseQuery('student', {
-    select: 'id',
-    filters: [
-      { column: 'school_code', operator: 'eq', value: schoolCode }
-    ],
-    enabled: ['superadmin', 'admin'].includes(role)
-  });
-
-  const { data: assessmentStats = [] } = useSupabaseQuery('assessments', {
-    select: 'id, status',
-    filters: [
-      { column: 'school_code', operator: 'eq', value: schoolCode }
-    ],
-    enabled: ['superadmin', 'admin', 'teacher'].includes(role)
-  });
-
-  const { data: attendanceStats = [] } = useSupabaseQuery('attendance', {
-    select: 'status',
-    filters: [
-      { column: 'school_code', operator: 'eq', value: schoolCode },
-      { column: 'date', operator: 'gte', value: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0] }
-    ],
-    enabled: ['superadmin', 'admin', 'teacher'].includes(role)
-  });
-
-  const { data: recentActivities = [] } = useSupabaseQuery('activity_logs', {
-    select: `
-      action,
-      description,
-      created_at,
-      user_profiles!inner(full_name)
-    `,
-    filters: [
-      { column: 'school_code', operator: 'eq', value: schoolCode }
-    ],
-    orderBy: { column: 'created_at', ascending: false },
-    limit: 5
-  });
-
   const getStatsForRole = (role) => {
-    const attendanceRate = attendanceStats.length > 0 
-      ? Math.round((attendanceStats.filter(a => a.status === 'present').length / attendanceStats.length) * 100)
-      : 0;
-
     const statsMap = {
       'cb_admin': [
         { title: 'Total Schools', value: 12, icon: <BankOutlined />, color: '#1890ff', trend: 8.2 },
@@ -102,22 +49,22 @@ const Dashboard = () => {
         { title: 'Active Users', value: 1250, icon: <TeamOutlined />, color: '#722ed1', trend: -2.1 },
       ],
       'superadmin': [
-        { title: 'Total Classes', value: classStats.length, icon: <BookOutlined />, color: '#1890ff', trend: 15.2 },
-        { title: 'Students', value: studentStats.length, icon: <TeamOutlined />, color: '#52c41a', trend: 8.7 },
+        { title: 'Total Classes', value: 8, icon: <BookOutlined />, color: '#1890ff', trend: 15.2 },
+        { title: 'Students', value: 245, icon: <TeamOutlined />, color: '#52c41a', trend: 8.7 },
         { title: 'Teachers', value: 28, icon: <UserOutlined />, color: '#722ed1', trend: 5.3 },
-        { title: 'Attendance Rate', value: attendanceRate, suffix: '%', icon: <CalendarOutlined />, color: '#fa8c16', trend: 2.1 }
+        { title: 'Attendance Rate', value: 94, suffix: '%', icon: <CalendarOutlined />, color: '#fa8c16', trend: 2.1 }
       ],
       'admin': [
-        { title: 'My Classes', value: classStats.length, icon: <BookOutlined />, color: '#1890ff', trend: 0 },
-        { title: 'Students', value: studentStats.length, icon: <TeamOutlined />, color: '#52c41a', trend: 5.2 },
-        { title: 'Attendance Rate', value: attendanceRate, suffix: '%', icon: <CalendarOutlined />, color: '#722ed1', trend: 1.8 },
-        { title: 'Assessments', value: assessmentStats.length, icon: <TrophyOutlined />, color: '#fa8c16', trend: -3.2 }
+        { title: 'My Classes', value: 6, icon: <BookOutlined />, color: '#1890ff', trend: 0 },
+        { title: 'Students', value: 180, icon: <TeamOutlined />, color: '#52c41a', trend: 5.2 },
+        { title: 'Attendance Rate', value: 92, suffix: '%', icon: <CalendarOutlined />, color: '#722ed1', trend: 1.8 },
+        { title: 'Assessments', value: 24, icon: <TrophyOutlined />, color: '#fa8c16', trend: -3.2 }
       ],
       'student': [
         { title: 'Subjects', value: 8, icon: <BookOutlined />, color: '#1890ff', trend: 0 },
         { title: 'Attendance', value: 92, suffix: '%', icon: <CalendarOutlined />, color: '#52c41a', trend: 2.5 },
         { title: 'Average Grade', value: 85, suffix: '%', icon: <TrophyOutlined />, color: '#722ed1', trend: 5.1 },
-        { title: 'Assessments', value: assessmentStats.length, icon: <BookOutlined />, color: '#fa8c16', trend: -1.2 }
+        { title: 'Assessments', value: 12, icon: <BookOutlined />, color: '#fa8c16', trend: -1.2 }
       ],
       'parent': [
         { title: 'Children', value: 2, icon: <TeamOutlined />, color: '#1890ff', trend: 0 },
@@ -127,17 +74,6 @@ const Dashboard = () => {
       ]
     };
     return statsMap[role] || statsMap['admin'];
-  };
-
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
   };
 
   const getQuickActions = (role) => {
@@ -234,45 +170,51 @@ const Dashboard = () => {
             <Card 
               style={{ 
                 borderRadius: '12px',
+                height: '100%',
                 border: '1px solid #e2e8f0',
-                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                background: '#ffffff'
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                background: '#ffffff',
+                transition: 'all 0.2s ease-in-out'
               }}
-              bodyStyle={{ padding: '20px' }}
             >
-              <Statistic
-                title={stat.title}
-                value={stat.value}
-                suffix={stat.suffix}
-                prefix={stat.icon}
-                valueStyle={{ color: stat.color }}
-                titleStyle={{ color: '#64748b', fontWeight: 500 }}
-              />
-              <div style={{ marginTop: '8px' }}>
-                <Text style={{ fontSize: '12px', color: '#64748b' }}>
-                  {stat.trend > 0 ? (
-                    <Space>
-                      <ArrowUpOutlined style={{ color: '#10b981' }} />
-                      <span style={{ color: '#10b981' }}>+{stat.trend}%</span>
-                    </Space>
-                  ) : stat.trend < 0 ? (
-                    <Space>
-                      <ArrowDownOutlined style={{ color: '#ef4444' }} />
-                      <span style={{ color: '#ef4444' }}>{stat.trend}%</span>
-                    </Space>
-                  ) : (
-                    <span>No change</span>
-                  )}
-                  <span style={{ marginLeft: '8px' }}>from last month</span>
-                </Text>
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ 
+                  fontSize: '48px', 
+                  color: stat.color, 
+                  marginBottom: '16px' 
+                }}>
+                  {stat.icon}
+                </div>
+                <Statistic
+                  title={stat.title}
+                  value={stat.value}
+                  suffix={stat.suffix}
+                  valueStyle={{ color: stat.color }}
+                  titleStyle={{ color: '#64748b', fontWeight: 500 }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text style={{ fontSize: '12px', color: '#64748b' }}>
+                    {stat.trend > 0 ? (
+                      <Space>
+                        <ArrowUpOutlined style={{ color: '#10b981' }} />
+                        <span style={{ color: '#10b981' }}>+{stat.trend}%</span>
+                      </Space>
+                    ) : stat.trend < 0 ? (
+                      <Space>
+                        <ArrowDownOutlined style={{ color: '#ef4444' }} />
+                        <span style={{ color: '#ef4444' }}>{stat.trend}%</span>
+                      </Space>
+                    ) : (
+                      <span>No change</span>
+                    )}
+                    <span style={{ marginLeft: '8px' }}>from last month</span>
+                  </Text>
+                </div>
               </div>
             </Card>
           </Col>
         ))}
       </Row>
-
-      {/* Content Grid */}
-    
 
       {/* Performance Overview (for admin and above) */}
       {['superadmin', 'admin'].includes(role) && (
@@ -306,7 +248,7 @@ const Dashboard = () => {
                   <div style={{ textAlign: 'center' }}>
                     <Progress
                       type="circle"
-                      percent={attendanceStats.length > 0 ? Math.round((attendanceStats.filter(a => a.status === 'present').length / attendanceStats.length) * 100) : 0}
+                      percent={92}
                       format={percent => `${percent}%`}
                       strokeColor="#6366f1"
                     />
@@ -319,7 +261,7 @@ const Dashboard = () => {
                   <div style={{ textAlign: 'center' }}>
                     <Progress
                       type="circle"
-                      percent={assessmentStats.length > 0 ? Math.round((assessmentStats.filter(a => a.status === 'completed').length / assessmentStats.length) * 100) : 0}
+                      percent={78}
                       format={percent => `${percent}%`}
                       strokeColor="#f59e0b"
                     />
@@ -335,54 +277,56 @@ const Dashboard = () => {
       )}
 
       {/* Recent Activities */}
-      {recentActivities.length > 0 && (
-        <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
-          <Col xs={24}>
-            <Card 
-              title="Recent Activities"
-              style={{ 
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                background: '#ffffff'
-              }}
-              headStyle={{ borderBottom: '1px solid #e2e8f0' }}
-            >
-              <div className="space-y-3">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '12px', 
-                    padding: '12px', 
-                    background: '#f8fafc', 
-                    borderRadius: '12px'
-                  }}>
-                    <CalendarOutlined style={{ width: '20px', height: '20px', color: '#6366f1' }} />
-                    <div>
-                      <p style={{ 
-                        color: '#1e293b', 
-                        fontSize: '14px', 
-                        fontWeight: 500,
-                        margin: 0
-                      }}>
-                        {activity.action}
-                      </p>
-                      <p style={{ 
-                        color: '#64748b', 
-                        fontSize: '12px',
-                        margin: 0
-                      }}>
-                        {activity.description} • {formatTimeAgo(activity.created_at)}
-                      </p>
-                    </div>
+      <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
+        <Col xs={24}>
+          <Card 
+            title="Recent Activities"
+            style={{ 
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+              background: '#ffffff'
+            }}
+            headStyle={{ borderBottom: '1px solid #e2e8f0' }}
+          >
+            <div className="space-y-3">
+              {[
+                { action: 'Attendance Marked', description: 'Grade 10-A completed', created_at: '2 hours ago' },
+                { action: 'Assignment Graded', description: 'Math homework reviewed', created_at: '4 hours ago' },
+                { action: 'Parent Meeting', description: 'Scheduled for tomorrow', created_at: '1 day ago' }
+              ].map((activity, index) => (
+                <div key={index} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  padding: '12px', 
+                  background: '#f8fafc', 
+                  borderRadius: '12px'
+                }}>
+                  <CalendarOutlined style={{ width: '20px', height: '20px', color: '#6366f1' }} />
+                  <div>
+                    <p style={{ 
+                      color: '#1e293b', 
+                      fontSize: '14px', 
+                      fontWeight: 500,
+                      margin: 0
+                    }}>
+                      {activity.action}
+                    </p>
+                    <p style={{ 
+                      color: '#64748b', 
+                      fontSize: '12px',
+                      margin: 0
+                    }}>
+                      {activity.description} • {activity.created_at}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Col>
+      </Row>
     </Content>
   );
 };
