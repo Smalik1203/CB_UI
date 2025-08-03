@@ -8,7 +8,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
 // Check if using fallback values
 const usingFallback = supabaseUrl === FALLBACK_SUPABASE_URL || supabaseAnonKey === FALLBACK_SUPABASE_ANON_KEY;
-}
 
 if (usingFallback) {
   console.warn("⚠️ Using fallback Supabase configuration. Please update the values in src/config/supabaseClient.js with your actual Supabase project details:");
@@ -19,4 +18,6 @@ if (usingFallback) {
 
 if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes("your-project-id") || supabaseAnonKey.includes("your-anon-key")) {
   throw new Error("Supabase configuration is incomplete. Please update the fallback values in src/config/supabaseClient.js or set up environment variables.");
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
