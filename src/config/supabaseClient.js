@@ -1,13 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Fallback configuration - replace these with your actual Supabase values
+const FALLBACK_SUPABASE_URL = "https://your-project-id.supabase.co";
+const FALLBACK_SUPABASE_ANON_KEY = "your-anon-key-here";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Missing Supabase environment variables:");
-  console.error("VITE_SUPABASE_URL:", supabaseUrl);
-  console.error("VITE_SUPABASE_ANON_KEY:", supabaseAnonKey ? "Present" : "Missing");
-  throw new Error("Supabase configuration is missing. Please click 'Connect to Supabase' in the top right to set up your Supabase connection.");
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || FALLBACK_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY;
+// Check if using fallback values
+const usingFallback = supabaseUrl === FALLBACK_SUPABASE_URL || supabaseAnonKey === FALLBACK_SUPABASE_ANON_KEY;
 }
 
+if (usingFallback) {
+  console.warn("⚠️ Using fallback Supabase configuration. Please update the values in src/config/supabaseClient.js with your actual Supabase project details:");
+  console.warn("1. Replace FALLBACK_SUPABASE_URL with your project URL");
+  console.warn("2. Replace FALLBACK_SUPABASE_ANON_KEY with your anon key");
+  console.warn("Or set up environment variables by clicking 'Connect to Supabase' in the top right");
+}
+
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes("your-project-id") || supabaseAnonKey.includes("your-anon-key")) {
+  throw new Error("Supabase configuration is incomplete. Please update the fallback values in src/config/supabaseClient.js or set up environment variables.");
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
