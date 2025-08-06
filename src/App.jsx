@@ -18,6 +18,8 @@ import AppSidebar from './components/Sidebar';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AddSpecificClass from './components/AddSpecificClass';
 import AddSuperAdmin from './components/AddSuperAdmin';
+import AddSubjects from './components/AddSubjects'
+import TimetablePage from './components/TimetablePage';
 const { Content } = Layout;
 
 // Add a Layout component for global sidebar/content structure
@@ -40,10 +42,10 @@ function App() {
   if (loading) {
     return <div>Loading...</div>;
   }
-  const isCbAdmin = user?.user_metadata?.role === 'cb_admin';
-  const isSuperAdmin = user?.user_metadata?.role === 'superadmin';
-  const isAdmin = user?.user_metadata?.role === 'admin';
-  const isStudent = user?.user_metadata?.role === 'student';
+  const isCbAdmin = user?.app_metadata?.role === 'cb_admin';
+  const isSuperAdmin = user?.app_metadata?.role === 'superadmin';
+  const isAdmin = user?.app_metadata?.role === 'admin';
+  const isStudent = user?.app_metadata?.role === 'student';
   return (
     <ConfigProvider
       theme={{
@@ -84,11 +86,14 @@ function App() {
             {isCbAdmin && <Route path="/add-schools" element={<PrivateRoute><AddSchools /></PrivateRoute>} />}
             {isCbAdmin && <Route path="/add-super-admin" element={<PrivateRoute><AddSuperAdmin /></PrivateRoute>} />}
 
+
             {isSuperAdmin && <Route path="/school-setup" element={<PrivateRoute><SetupSchool /></PrivateRoute>} />}
             {isSuperAdmin && <Route path="/add-school-admin" element={<PrivateRoute><AddAdmin /></PrivateRoute>} />}
             {isSuperAdmin && <Route path="/add-student" element={<PrivateRoute><AddStudent /></PrivateRoute>} />}
             {isSuperAdmin && <Route path="/add-specific-class" element={<PrivateRoute><AddSpecificClass /></PrivateRoute>} />}
-            {isAdmin && <Route path="/admin-dashboard" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />}
+            {isSuperAdmin && <Route path="/add-subjects" element={<PrivateRoute><AddSubjects /></PrivateRoute>} />}
+            {isSuperAdmin && <Route path="/add-timetable" element={<PrivateRoute><TimetablePage /></PrivateRoute>} />}
+            {isAdmin && <Route path="/add-timetable" element={<PrivateRoute><TimetablePage /></PrivateRoute>} />}
 
             <Route path="/signup" element={<PrivateRoute><SignUpUser /></PrivateRoute>} />
             <Route path="/assessments" element={<PrivateRoute><Assessments /></PrivateRoute>} />
@@ -96,6 +101,8 @@ function App() {
             <Route path="/fees" element={<PrivateRoute><Fees /></PrivateRoute>} />
             <Route path="/results" element={<PrivateRoute><Results /></PrivateRoute>} />
             <Route path="/school-setup" element={<PrivateRoute><SetupSchool /></PrivateRoute>} />
+            
+
           </Routes>
         </AppLayout>
       )}

@@ -36,7 +36,7 @@ const { Title, Text } = Typography;
 const Dashboard = () => {
   const { user } = useAuth();
   
-  const role = user?.user_metadata?.role || 'admin';
+  const role = user?.app_metadata?.role;
   const userName = user?.user_metadata?.full_name || 'User';
   const schoolName = user?.user_metadata?.school_name || 'Demo School';
   const schoolCode = user?.user_metadata?.school_code;
@@ -216,117 +216,8 @@ const Dashboard = () => {
         ))}
       </Row>
 
-      {/* Performance Overview (for admin and above) */}
-      {['superadmin', 'admin'].includes(role) && (
-        <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
-          <Col xs={24}>
-            <Card 
-              title="Performance Overview"
-              style={{ 
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-                background: '#ffffff'
-              }}
-              headStyle={{ borderBottom: '1px solid #e2e8f0' }}
-            >
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={8}>
-                  <div style={{ textAlign: 'center' }}>
-                    <Progress
-                      type="circle"
-                      percent={85}
-                      format={percent => `${percent}%`}
-                      strokeColor="#10b981"
-                    />
-                    <div style={{ marginTop: '8px' }}>
-                      <Text strong style={{ color: '#1e293b' }}>Overall Performance</Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <div style={{ textAlign: 'center' }}>
-                    <Progress
-                      type="circle"
-                      percent={92}
-                      format={percent => `${percent}%`}
-                      strokeColor="#6366f1"
-                    />
-                    <div style={{ marginTop: '8px' }}>
-                      <Text strong style={{ color: '#1e293b' }}>Attendance Rate</Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <div style={{ textAlign: 'center' }}>
-                    <Progress
-                      type="circle"
-                      percent={78}
-                      format={percent => `${percent}%`}
-                      strokeColor="#f59e0b"
-                    />
-                    <div style={{ marginTop: '8px' }}>
-                      <Text strong style={{ color: '#1e293b' }}>Assessment Completion</Text>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        </Row>
-      )}
 
-      {/* Recent Activities */}
-      <Row gutter={[16, 16]} style={{ marginTop: '24px' }}>
-        <Col xs={24}>
-          <Card 
-            title="Recent Activities"
-            style={{ 
-              borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              background: '#ffffff'
-            }}
-            headStyle={{ borderBottom: '1px solid #e2e8f0' }}
-          >
-            <div className="space-y-3">
-              {[
-                { action: 'Attendance Marked', description: 'Grade 10-A completed', created_at: '2 hours ago' },
-                { action: 'Assignment Graded', description: 'Math homework reviewed', created_at: '4 hours ago' },
-                { action: 'Parent Meeting', description: 'Scheduled for tomorrow', created_at: '1 day ago' }
-              ].map((activity, index) => (
-                <div key={index} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '12px', 
-                  padding: '12px', 
-                  background: '#f8fafc', 
-                  borderRadius: '12px'
-                }}>
-                  <CalendarOutlined style={{ width: '20px', height: '20px', color: '#6366f1' }} />
-                  <div>
-                    <p style={{ 
-                      color: '#1e293b', 
-                      fontSize: '14px', 
-                      fontWeight: 500,
-                      margin: 0
-                    }}>
-                      {activity.action}
-                    </p>
-                    <p style={{ 
-                      color: '#64748b', 
-                      fontSize: '12px',
-                      margin: 0
-                    }}>
-                      {activity.description} • {activity.created_at}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </Col>
-      </Row>
+ 
     </Content>
   );
 };

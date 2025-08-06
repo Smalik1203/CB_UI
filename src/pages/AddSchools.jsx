@@ -99,7 +99,7 @@ export const AddSchools = () => {
                   initialValue="SCH"
                   rules={[{ required: true, message: 'Please enter school code' }]}
                 >
-                  <Input prefix={<NumberOutlined />} placeholder="Enter school code" />
+                  <Input  placeholder="Enter school code" />
                 </Form.Item>
               </Col>
 

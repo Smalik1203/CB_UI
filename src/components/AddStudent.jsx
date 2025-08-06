@@ -6,63 +6,15 @@ import { supabase } from '../config/supabaseClient';
 
 const { Title } = Typography;
 const { Option } = Select;
-
-/**
- * ADD STUDENT COMPONENT - Student Enrollment System
- * 
- * CHANGES MADE:
- * - Converted from basic HTML form to professional Ant Design components
- * - Added multi-column responsive layout for better UX
- * - Implemented comprehensive form validation with regex patterns
- * - Added dynamic class instance loading with academic year context
- * - Integrated with Supabase Edge Functions for secure student creation
- * - Added proper loading states and user feedback
- * 
- * BACKEND INTEGRATION NEEDED:
- * - Replace class instances query with real-time Supabase data
- * - Implement student enrollment workflow with parent notifications
- * - Add student ID generation and roll number assignment
- * - Integrate with fee structure assignment
- * - Add bulk student import functionality
- * 
- * SUPABASE INTEGRATION POINTS:
- * - Class Instances Query: SELECT ci.*, c.grade, c.section, ay.year_start, ay.year_end 
- *   FROM class_instances ci JOIN classes c ON ci.class_id = c.id 
- *   JOIN academic_years ay ON ci.academic_year_id = ay.id
- * - Edge Function: /functions/v1/create-student
- * - Student Table: INSERT INTO students (user_id, class_instance_id, roll_number, etc.)
- */
 const AddStudent = () => {
   const { user } = useAuth();
-  
-  // BACKEND INTEGRATION: Get school context from authenticated user
-  // This ensures students are enrolled in the correct school
-  const { school_code, super_admin_code } = user.user_metadata || {};
+    const { school_code, super_admin_code } = user.user_metadata || {};
 
   const [form] = Form.useForm();
   const [classInstances, setClassInstances] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  /**
-   * FETCH CLASS INSTANCES - Load available classes for enrollment
-   * 
-   * BACKEND INTEGRATION NEEDED:
-   * - Replace with real-time Supabase query with joins
-   * - Add filtering for active academic years only
-   * - Include student capacity and current enrollment count
-   * - Add caching for frequently accessed data
-   * 
-   * ENHANCED QUERY EXAMPLE:
-   * SELECT ci.id, c.grade, c.section, ay.year_start, ay.year_end,
-   *        COUNT(s.id) as current_students, c.max_capacity
-   * FROM class_instances ci
-   * JOIN classes c ON ci.class_id = c.id
-   * JOIN academic_years ay ON ci.academic_year_id = ay.id
-   * LEFT JOIN students s ON s.class_instance_id = ci.id
-   * WHERE ci.school_code = user.school_code AND ay.is_active = true
-   * GROUP BY ci.id, c.grade, c.section, ay.year_start, ay.year_end, c.max_capacity
-   */
-  useEffect(() => {
+   useEffect(() => {
     const fetchClassInstances = async () => {
       // BACKEND INTEGRATION: Replace with comprehensive query above
       const { data, error } = await supabase
@@ -85,33 +37,6 @@ const AddStudent = () => {
     if (school_code && super_admin_code) fetchClassInstances();
   }, [school_code, super_admin_code]);
 
-  /**
-   * STUDENT CREATION HANDLER
-   * 
-   * BACKEND INTEGRATION NEEDED:
-   * - Implement comprehensive student enrollment workflow
-   * - Generate unique student ID and roll number
-   * - Create parent account if not exists
-   * - Assign default fee structure for the class
-   * - Send welcome email to student and parent
-   * - Create initial attendance records
-   * - Add to relevant WhatsApp/communication groups
-   * 
-   * SECURITY FEATURES:
-   * - Validate school context and permissions
-   * - Check class capacity before enrollment
-   * - Prevent duplicate email addresses
-   * - Validate parent contact information
-   * 
-   * WORKFLOW STEPS:
-   * 1. Validate form data and school context
-   * 2. Check class capacity and availability
-   * 3. Create auth user with student role
-   * 4. Insert student record with generated roll number
-   * 5. Create/link parent account
-   * 6. Assign fee structure and payment schedule
-   * 7. Send notifications and welcome materials
-   */
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
@@ -125,8 +50,7 @@ const AddStudent = () => {
         return;
       }
 
-      // EDGE FUNCTION CALL: Secure student creation with full workflow
-      // BACKEND INTEGRATION: Enhance this endpoint to handle complete enrollment
+  
       const response = await fetch('https://mvvzqouqxrtyzuzqbeud.supabase.co/functions/v1/create-student', {
         method: 'POST',
         headers: {
@@ -140,13 +64,7 @@ const AddStudent = () => {
           phone: values.phone,
           student_code: values.student_code,
           class_instance_id: values.class_instance_id,
-          // BACKEND INTEGRATION: Add additional fields
-          // parent_name: values.parent_name,
-          // parent_email: values.parent_email,
-          // parent_phone: values.parent_phone,
-          // emergency_contact: values.emergency_contact,
-          // medical_info: values.medical_info,
-          // transport_required: values.transport_required
+        
         }),
       });
 
@@ -159,12 +77,7 @@ const AddStudent = () => {
         // SUCCESS HANDLING: User feedback and form reset
         message.success('Student created successfully!');
         form.resetFields();
-        
-        // BACKEND INTEGRATION: Additional success actions
-        // - Refresh class instances to show updated enrollment count
-        // - Navigate to student management page
-        // - Show enrollment confirmation with student details
-        // fetchClassInstances(); // Refresh data
+   
       }
     } catch (err) {
       // GENERAL ERROR HANDLING: Network and unexpected errors
@@ -192,21 +105,7 @@ const AddStudent = () => {
           }}
           headStyle={{ borderBottom: '1px solid #e2e8f0' }}
         >
-          {/* 
-            PROFESSIONAL FORM DESIGN:
-            - Multi-column responsive layout for better space utilization
-            - Comprehensive validation rules with regex patterns
-            - Icon prefixes for visual appeal and better UX
-            - Proper input types and constraints
-            - Dynamic class selection with academic year context
-            
-            BACKEND INTEGRATION NEEDED:
-            - Add parent information fields
-            - Include emergency contact details
-            - Add medical information section
-            - Include transport requirements
-            - Add photo upload functionality
-          */}
+
           <Form
             form={form}
             layout="vertical"
@@ -292,14 +191,7 @@ const AddStudent = () => {
               </Col>
 
               <Col xs={24} md={12}>
-                {/* 
-                  CLASS SELECTION:
-                  BACKEND INTEGRATION NEEDED:
-                  - Show current enrollment count vs capacity
-                  - Disable full classes
-                  - Add class teacher information
-                  - Show fee structure for selected class
-                */}
+
                 <Form.Item
                   name="class_instance_id"
                   label="Class"

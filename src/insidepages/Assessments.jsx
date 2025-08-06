@@ -32,8 +32,7 @@ import {
   UserOutlined,
   BarChartOutlined
 } from '@ant-design/icons';
-import { useAuth } from '../contexts/AuthContext';
-import { useSupabaseQuery, useSupabaseMutation, useSupabaseSubscription } from '../hooks/useSupabase';
+import { useAuth } from '../AuthProvider';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -99,7 +98,7 @@ const SAMPLE_CLASSES = [
 ];
 
 const Assessments = () => {
-  const { user } = useAuth();
+  const {user} = useAuth();
   const [activeTab, setActiveTab] = useState('list');
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);

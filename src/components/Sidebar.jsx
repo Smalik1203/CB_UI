@@ -28,7 +28,7 @@ const AppSidebar = () => {
   const { user } = useAuth();
 
   const userName = user?.user_metadata?.full_name || 'User';
-  const userRole = user?.user_metadata?.role || 'user';
+  const userRole = user?.app_metadata?.role || 'user';
 
   const handleLogout = async () => {
     try {
@@ -66,25 +66,6 @@ const AppSidebar = () => {
         roles: ['superadmin']
       },
       {
-        key: '/add-school-admin',
-        icon: <UserAddOutlined />,
-        label: 'Add Admin',
-        roles: ['superadmin']
-      },
-      {
-        key: '/add-specific-class',
-        icon: <UnorderedListOutlined />,
-        label: 'Add Class',
-        roles: ['superadmin']
-      },
-
-      {
-        key: '/add-student',
-        icon: <TeamOutlined />,
-        label: 'Add Students',
-        roles: ['superadmin']
-      },
-      {
         key: '/attendance',
         icon: <CalendarOutlined />,
         label: 'Attendance',
@@ -107,7 +88,20 @@ const AppSidebar = () => {
         icon: <DollarOutlined />,
         label: 'Fees',
         roles: ['superadmin', 'admin', 'student', 'parent']
+      },
+      {
+        key: '/add-subjects',
+        icon: <DollarOutlined />,
+        label: 'Subjects',
+        roles: ['superadmin']
+      },
+      {
+        key: '/add-timetable',
+        icon: <DollarOutlined />,
+        label: 'Timetable',
+        roles: ['superadmin', 'admin']
       }
+      
     ];
 
     return allItems

@@ -6,7 +6,7 @@ import SuperAdminAttendance from './superadmin/SuperAdminAttendance';
 
 const AttendancePage = () => {
   const { user } = useAuth();
-  const role = user?.user_metadata?.role;
+  const role = user?.app_metadata?.role;
 
   switch (role) {
     case 'superadmin':

@@ -11,6 +11,8 @@ import {
   Col,
   Table,
   Tag,
+  Modal,
+  Popconfirm,
 } from 'antd';
 import {
   UserAddOutlined,
@@ -20,6 +22,7 @@ import {
   UserOutlined,
   IdcardOutlined,
 } from '@ant-design/icons';
+import { Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '../config/supabaseClient';
 import { useAuth } from '../AuthProvider';
 
@@ -30,23 +33,27 @@ const AddAdmin = () => {
   const { school_code, super_admin_code } = user.user_metadata || {};
 
   const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
+
   const [loading, setLoading] = useState(false);
   const [adminList, setAdminList] = useState([]);
   const [adminLoading, setAdminLoading] = useState(false);
 
-  // Fetch admins by school_code
+  const [editingAdmin, setEditingAdmin] = useState(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+
   const fetchAdmins = async () => {
     setAdminLoading(true);
     const { data, error } = await supabase
       .from('admin')
-      .select('full_name, email, phone, role, admin_code, created_at')
+      .select('id, full_name, email, phone, role, admin_code, super_admin_code')
       .eq('school_code', school_code)
-      .order('created_at', { ascending: false });
+      .eq('role', 'admin');
 
     if (error) {
       message.error('Failed to load admins');
     } else {
-      setAdminList(data);
+      setAdminList(data || []);
     }
     setAdminLoading(false);
   };
@@ -80,7 +87,7 @@ const AddAdmin = () => {
             email: values.email,
             password: values.password,
             phone: values.phone,
-            role: values.role,
+            role: 'admin',
             admin_code: values.admin_code,
             school_code,
             super_admin_code,
@@ -95,7 +102,7 @@ const AddAdmin = () => {
       } else {
         message.success('Admin created successfully!');
         form.resetFields();
-        fetchAdmins(); // Refresh list
+        fetchAdmins();
       }
     } catch (err) {
       message.error('Unexpected error: ' + err.message);
@@ -104,38 +111,88 @@ const AddAdmin = () => {
     }
   };
 
+  const handleEdit = (record) => {
+    setEditingAdmin(record);
+    editForm.setFieldsValue(record);
+    setEditModalVisible(true);
+  };
+
+  const handleEditSave = async () => {
+    const values = await editForm.validateFields();
+
+    const { error } = await supabase
+      .from('admin')
+      .update({
+        full_name: values.full_name,
+        phone: values.phone,
+        admin_code: values.admin_code,
+      })
+      .eq('id', editingAdmin.id); // ✅ Corrected here
+
+    if (error) {
+      message.error('Update failed');
+    } else {
+      message.success('Admin updated');
+      setEditModalVisible(false);
+      setEditingAdmin(null);
+      fetchAdmins();
+    }
+  };
+
+  const handleDelete = async (user_id) => {
+    const sessionResult = await supabase.auth.getSession();
+    const token = sessionResult.data.session?.access_token;
+
+    const res = await fetch(
+      'https://mvvzqouqxrtyzuzqbeud.supabase.co/functions/v1/delete-admin',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id }),
+      }
+    );
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      message.error(result.error || 'Failed to delete admin');
+    } else {
+      message.success('Admin deleted successfully');
+      fetchAdmins();
+    }
+  };
+
   const columns = [
-    {
-      title: 'Full Name',
-      dataIndex: 'full_name',
-      key: 'full_name',
-    },
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: 'Phone',
-      dataIndex: 'phone',
-      key: 'phone',
-    },
-    {
-      title: 'Admin Code',
-      dataIndex: 'admin_code',
-      key: 'admin_code',
-    },
+    { title: 'Full Name', dataIndex: 'full_name', key: 'full_name' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Phone', dataIndex: 'phone', key: 'phone' },
+    { title: 'Admin Code', dataIndex: 'admin_code', key: 'admin_code' },
     {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
       render: (role) => <Tag color="blue">{role}</Tag>,
     },
+    { title: 'Created By', dataIndex: 'super_admin_code', key: 'super_admin_code' },
     {
-      title: 'Created At',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (date) => new Date(date).toLocaleString(),
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button icon={<Pencil size={16} />} onClick={() => handleEdit(record)} type="link" />
+          <Popconfirm
+            title="Are you sure to delete this admin?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button icon={<Trash2 size={16} />} type="link" danger />
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 
@@ -269,11 +326,44 @@ const AddAdmin = () => {
               columns={columns}
               dataSource={adminList}
               loading={adminLoading}
-              rowKey={(record) => record.email}
+              rowKey={(record) => record.id}
               pagination={{ pageSize: 25 }}
             />
           </div>
         </Card>
+
+        {/* Edit Modal */}
+        <Modal
+          open={editModalVisible}
+          title="Edit Admin"
+          onCancel={() => setEditModalVisible(false)}
+          onOk={handleEditSave}
+          okText="Save Changes"
+        >
+          <Form form={editForm} layout="vertical">
+            <Form.Item
+              name="full_name"
+              label="Full Name"
+              rules={[{ required: true, message: 'Please enter full name' }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="phone"
+              label="Phone Number"
+              rules={[{ required: true, message: 'Please enter phone number' }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="admin_code"
+              label="Admin Code"
+              rules={[{ required: true, message: 'Please enter admin code' }]}
+            >
+              <Input />
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     </div>
   );
