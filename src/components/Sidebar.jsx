@@ -72,12 +72,6 @@ const AppSidebar = () => {
         roles: ['superadmin', 'admin', 'teacher', 'student', 'parent']
       },
       {
-        key: '/assessments',
-        icon: <BookOutlined />,
-        label: 'Assessments',
-        roles: ['superadmin', 'admin', 'teacher', 'student']
-      },
-      {
         key: '/results',
         icon: <TrophyOutlined />,
         label: 'Results',
