@@ -18,34 +18,39 @@ import AppSidebar from './components/Sidebar';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AddSpecificClass from './components/AddSpecificClass';
 import AddSuperAdmin from './components/AddSuperAdmin';
-import AddSubjects from './components/AddSubjects'
-import TimetablePage from './components/TimetablePage';
+import AddSubjects from './components/AddSubjects';
+
+// ⬇️ NEW: use the refactored page version
+import Timetable from './pages/Timetable';
+
 const { Content } = Layout;
 
-// Add a Layout component for global sidebar/content structure
+// Global layout with sidebar
 function AppLayout({ children, isCbAdmin, isSuperAdmin, isAdmin, isStudent }) {
   return (
     <Layout style={{ minHeight: '100vh' }}>
-        <AppSidebar />
-        <Layout style={{ marginLeft: 280 }}>
-          <Content>
-        {children}
-          </Content>
-        </Layout>
+      <AppSidebar />
+      <Layout style={{ marginLeft: 280 }}>
+        <Content>
+          {children}
+        </Content>
+      </Layout>
     </Layout>
   );
 }
 
 function App() {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return <div>Loading...</div>;
   }
+
   const isCbAdmin = user?.app_metadata?.role === 'cb_admin';
   const isSuperAdmin = user?.app_metadata?.role === 'superadmin';
   const isAdmin = user?.app_metadata?.role === 'admin';
   const isStudent = user?.app_metadata?.role === 'student';
+
   return (
     <ConfigProvider
       theme={{
@@ -70,49 +75,62 @@ function App() {
       }}
     >
       <Router>
-      {user && (
-        <AppLayout 
-          isCbAdmin={isCbAdmin} 
-          isSuperAdmin={isSuperAdmin} 
-          isAdmin={isAdmin} 
-          isStudent={isStudent}
-        >
+        {user && (
+          <AppLayout
+            isCbAdmin={isCbAdmin}
+            isSuperAdmin={isSuperAdmin}
+            isAdmin={isAdmin}
+            isStudent={isStudent}
+          >
+            <Routes>
+              {/* Logged-in routes */}
+              <Route path="/" element={<Login />} />
+              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+
+              {isCbAdmin && (
+                <>
+                  <Route path="/add-schools" element={<PrivateRoute><AddSchools /></PrivateRoute>} />
+                  <Route path="/add-super-admin" element={<PrivateRoute><AddSuperAdmin /></PrivateRoute>} />
+                </>
+              )}
+
+              {isSuperAdmin && (
+                <>
+                  <Route path="/school-setup" element={<PrivateRoute><SetupSchool /></PrivateRoute>} />
+                  <Route path="/add-school-admin" element={<PrivateRoute><AddAdmin /></PrivateRoute>} />
+                  <Route path="/add-student" element={<PrivateRoute><AddStudent /></PrivateRoute>} />
+                  <Route path="/add-specific-class" element={<PrivateRoute><AddSpecificClass /></PrivateRoute>} />
+                  <Route path="/add-subjects" element={<PrivateRoute><AddSubjects /></PrivateRoute>} />
+                </>
+              )}
+
+              {/* New timetable page — allow both Admin & SuperAdmin */}
+              {(isSuperAdmin || isAdmin) && (
+                <>
+                  <Route path="/add-timetable" element={<PrivateRoute><Timetable /></PrivateRoute>} />
+                  {/* Optional cleaner alias */}
+                  <Route path="/timetable" element={<PrivateRoute><Timetable /></PrivateRoute>} />
+                </>
+              )}
+
+              <Route path="/signup" element={<PrivateRoute><SignUpUser /></PrivateRoute>} />
+              <Route path="/assessments" element={<PrivateRoute><Assessments /></PrivateRoute>} />
+              <Route path="/attendance" element={<PrivateRoute><Attendance /></PrivateRoute>} />
+              <Route path="/fees" element={<PrivateRoute><Fees /></PrivateRoute>} />
+              <Route path="/results" element={<PrivateRoute><Results /></PrivateRoute>} />
+              <Route path="/school-setup" element={<PrivateRoute><SetupSchool /></PrivateRoute>} />
+            </Routes>
+          </AppLayout>
+        )}
+
+        {!user && (
           <Routes>
-            {/* Existing routes for logged-in users */}
             <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path ="*" element={<Navigate to='/dashboard'/>}></Route>
-
-            {isCbAdmin && <Route path="/add-schools" element={<PrivateRoute><AddSchools /></PrivateRoute>} />}
-            {isCbAdmin && <Route path="/add-super-admin" element={<PrivateRoute><AddSuperAdmin /></PrivateRoute>} />}
-
-
-            {isSuperAdmin && <Route path="/school-setup" element={<PrivateRoute><SetupSchool /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-school-admin" element={<PrivateRoute><AddAdmin /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-student" element={<PrivateRoute><AddStudent /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-specific-class" element={<PrivateRoute><AddSpecificClass /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-subjects" element={<PrivateRoute><AddSubjects /></PrivateRoute>} />}
-            {isSuperAdmin && <Route path="/add-timetable" element={<PrivateRoute><TimetablePage /></PrivateRoute>} />}
-            {isAdmin && <Route path="/add-timetable" element={<PrivateRoute><TimetablePage /></PrivateRoute>} />}
-
-            <Route path="/signup" element={<PrivateRoute><SignUpUser /></PrivateRoute>} />
-            <Route path="/assessments" element={<PrivateRoute><Assessments /></PrivateRoute>} />
-            <Route path="/attendance" element={<PrivateRoute><Attendance /></PrivateRoute>} />
-            <Route path="/fees" element={<PrivateRoute><Fees /></PrivateRoute>} />
-            <Route path="/results" element={<PrivateRoute><Results /></PrivateRoute>} />
-            <Route path="/school-setup" element={<PrivateRoute><SetupSchool /></PrivateRoute>} />
-            
-
+            <Route path="/signup" element={<SignUpUser />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </AppLayout>
-      )}
-      {!user && (
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/signup" element={<SignUpUser />} />
-          <Route path ="*" element={<Navigate to='/'/>}></Route>
-        </Routes>
-      )}
+        )}
       </Router>
     </ConfigProvider>
   );
